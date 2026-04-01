@@ -1,9 +1,15 @@
 {
   "version": 2,
-  "functions": {
-    "api/process.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 60
+  "builds": [
+    {
+      "src": "api/script.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/api/script",
+      "dest": "/api/script.js"
+    }
+  ]
 }
