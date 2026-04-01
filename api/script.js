@@ -1,15 +1,13 @@
 import axios from "axios";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import pLimit from "p-limit";
 
 const ORG_ID = "fbb76062-fc40-4565-9aab-fc67c2a1d1bc";
-
-// Your cookie
 const COOKIE = "__Secure-next-auth.session-token=e0c4f1b9-1d21-4b8d-8078-5d9aaf203f22";
 
-// concurrency limit
 const limit = pLimit(3);
 
+// --- helpers ----
 async function fetchHTML(url) {
     const { data } = await axios.get(url);
     return data;
@@ -47,9 +45,9 @@ async function getUploadUrl(mime) {
             headers: {
                 "Content-Type": "application/json",
                 "x-mantle-org-id": ORG_ID,
-                "cookie": COOKIE,
-                "origin": "https://app.heymantle.com",
-                "referer": "https://app.heymantle.com/",
+                cookie: COOKIE,
+                origin: "https://app.heymantle.com",
+                referer: "https://app.heymantle.com/",
                 "user-agent": "Mozilla/5.0"
             }
         }
@@ -68,7 +66,6 @@ async function uploadToSignedUrl(signedUrl, buffer, mime) {
 
 async function processImage($, img) {
     const src = $(img).attr("src");
-
     if (!src || !src.startsWith("data:image")) return;
 
     try {
@@ -91,10 +88,7 @@ async function processPage(url) {
     const $ = cheerio.load(html);
 
     const container = $(".content.ql-editor");
-
-    if (!container.length) {
-        throw new Error("Content container not found");
-    }
+    if (!container.length) throw new Error("Content container not found");
 
     const images = container.find("img").toArray();
 
@@ -105,7 +99,7 @@ async function processPage(url) {
     return container.html();
 }
 
-// ================== SERVERLESS HANDLER ==================
+// ============ ✅ NEW VERCEL HANDLER (ESM) ============
 
 export default async function handler(req, res) {
     try {
@@ -114,17 +108,14 @@ export default async function handler(req, res) {
         }
 
         const { url } = req.body;
-
-        if (!url) {
-            return res.status(400).json({ error: "Missing URL" });
-        }
+        if (!url) return res.status(400).json({ error: "Missing URL" });
 
         const resultHTML = await processPage(url);
 
-        res.status(200).send(resultHTML);
+        return res.status(200).send(resultHTML);
 
     } catch (err) {
-        console.error("API ERROR:", err.message);
+        console.error("API ERROR:", err);
         return res.status(500).json({ error: err.message });
     }
 }
