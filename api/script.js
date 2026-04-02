@@ -96,6 +96,26 @@ async function processPage(url) {
         images.map((img) => limit(() => processImage($, img)))
     );
 
+    const iframes = container.find("iframe").toArray();
+    iframes.forEach((iframe) => {
+        let src = $(iframe).attr("src");
+        if (src) {
+            try {
+                const urlObj = new URL(src);
+                if (urlObj.searchParams.get("origin") === "https://keficommerce.user.com") {
+                    urlObj.searchParams.delete("origin");
+                    $(iframe).attr("src", urlObj.toString());
+                }
+            } catch (e) {
+                // Fallback for relative URLs or anything URL constructor can't parse
+                src = src.replace("?origin=https://keficommerce.user.com&", "?")
+                           .replace("?origin=https://keficommerce.user.com", "")
+                           .replace("&origin=https://keficommerce.user.com", "");
+                $(iframe).attr("src", src);
+            }
+        }
+    });
+
     return container.html();
 }
 
